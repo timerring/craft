@@ -1,8 +1,14 @@
-# craft
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/headerDark.svg" />
+    <img src="assets/headerLight.svg" alt="CRAFT" />
+  </picture>
 
 **C**ollection of **R**aw **A**I **F**irst **T**emplates.
 
-> My Personal AI templates and configurations.
+*My Personal AI templates and configurations.*
+
+</div>
 
 ## Structure
 
