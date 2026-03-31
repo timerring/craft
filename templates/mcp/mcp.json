@@ -1,0 +1,91 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--browser-url=http://127.0.0.1:9222"
+      ],
+      "disabled": false
+    },
+    "dart": {
+      "command": "dart",
+      "args": [
+        "mcp-server"
+      ],
+      "disabled": false
+    },
+    "figma-remote-mcp-server": {
+      "serverUrl": "https://mcp.figma.com/mcp",
+      "disabled": false
+    },
+    "proxyman": {
+      "command": "/Applications/Proxyman.app/Contents/MacOS/mcp-server",
+      "disabled": false
+    },
+    "Context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {
+        "CONTEXT7_API_KEY": "YOUR_CONTEXT7_API_KEY_HERE"
+      },
+      "disabled": false
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "disabled": false
+    },
+    "mcp-server-time": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-time",
+        "--local-timezone=Asia/Shanghai"
+      ],
+      "disabled": false
+    },
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant"
+      ],
+      "disabled": false
+    },
+    "morph": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@morphllm/morphmcp"
+      ],
+      "env": {
+        "MORPH_API_KEY": "YOUR_MORPH_API_KEY_HERE",
+        "ALL_TOOLS": "true"
+      },
+      "disabled": false
+    },
+    "tavily-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY_HERE",
+        "DEFAULT_PARAMETERS": "{\"include_images\": true, \"max_results\": 15, \"search_depth\": \"advanced\"}"
+      },
+      "disabled": false
+    }
+  }
+}

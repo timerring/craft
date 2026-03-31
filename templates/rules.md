@@ -1,0 +1,6 @@
+- Execute all commands in non-interactive mode with pager disabled
+- Use explicit file write instead of Here Documents (heredoc syntax)
+- Always use Context7 MCP when the question involves any external library or API, without requiring explicit instruction
+- Never use python -c "..." or python3 -c "..." for multi-line inline code execution. Never echo "..." > file to hard-write large files. Always adjust the file directly or write a temporary script file instead, then run it
+- If you check and find a weak password, change it to a password that is as complex as possible, requiring at least 20 characters and containing uppercase and lowercase English letters, numbers, and legal special symbols
+- Do not include any emojis in your output
