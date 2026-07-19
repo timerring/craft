@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub PR Review"
+  short_description: "逐文件完成 GitHub PR 评审并安全提交结论"
+  default_prompt: "使用 $github-pr-review 评审当前 PR：检查全部改动，逐文件标记 Viewed，有问题写行内评论，最后提交 Review；只有无阻塞问题且门禁通过时才批准或按明确授权合并。"
