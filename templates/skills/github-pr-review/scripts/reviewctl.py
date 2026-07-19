@@ -30,7 +30,7 @@ def gh_binary() -> str:
     raise ReviewCtlError("GitHub CLI `gh` is not installed or not on PATH")
 
 
-def run_gh(args: Sequence[str]) -> Any:
+def run_gh(args: Sequence[str], *, parse_json: bool = True) -> Any:
     proc = subprocess.run(
         [gh_binary(), *args],
         check=False,
@@ -41,6 +41,8 @@ def run_gh(args: Sequence[str]) -> Any:
         message = proc.stderr.strip() or proc.stdout.strip() or "unknown gh failure"
         raise ReviewCtlError(message)
     output = proc.stdout.strip()
+    if not parse_json:
+        return output or None
     if not output:
         return None
     try:
@@ -50,7 +52,11 @@ def run_gh(args: Sequence[str]) -> Any:
 
 
 def ensure_auth() -> None:
-    run_gh(["auth", "status", "--json", "hosts"])
+    hostname = os.environ.get("GH_HOST", "github.com")
+    run_gh(
+        ["auth", "status", "--active", "--hostname", hostname],
+        parse_json=False,
+    )
 
 
 def pr_identity(repo: str, pr: int) -> dict[str, Any]:
@@ -90,8 +96,50 @@ def graphql(query: str, variables: dict[str, Any]) -> Any:
     return run_gh(args)
 
 
+def find_pending_review(repo: str, pr: int) -> dict[str, Any] | None:
+    parts = repo.split("/", 1)
+    if len(parts) != 2 or not all(parts):
+        raise ReviewCtlError("--repo must use OWNER/REPO format")
+    owner, name = parts
+    query = """
+query($owner: String!, $name: String!, $number: Int!) {
+  viewer { login }
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      reviews(first: 100, states: [PENDING]) {
+        nodes { id state commit { oid } author { login } }
+        pageInfo { hasNextPage }
+      }
+    }
+  }
+}
+"""
+    result = graphql(query, {"owner": owner, "name": name, "number": pr})
+    viewer = result["data"]["viewer"]["login"]
+    reviews = result["data"]["repository"]["pullRequest"]["reviews"]
+    if reviews["pageInfo"]["hasNextPage"]:
+        raise ReviewCtlError("pending review lookup was truncated; refusing to create a duplicate")
+    matches = [
+        review
+        for review in reviews["nodes"]
+        if review.get("author", {}).get("login") == viewer
+    ]
+    if len(matches) > 1:
+        raise ReviewCtlError("GitHub returned multiple pending reviews for the active actor")
+    return matches[0] if matches else None
+
+
 def create_pending(repo: str, pr: int, expected_head: str) -> dict[str, Any]:
     identity = require_head(repo, pr, expected_head)
+    existing = find_pending_review(repo, pr)
+    if existing is not None:
+        existing_head = existing.get("commit", {}).get("oid")
+        if existing_head != expected_head:
+            raise ReviewCtlError(
+                "an existing pending review targets a different HEAD; discard or submit it "
+                "before restarting the review"
+            )
+        return existing
     query = """
 mutation($pullRequestId: ID!, $commitOID: GitObjectID!) {
   addPullRequestReview(input: {

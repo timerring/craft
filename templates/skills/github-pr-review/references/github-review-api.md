@@ -8,7 +8,11 @@ Resolve PR identity with `gh pr view --json id,headRefOid,...`. Every write must
 
 ## Pending review
 
-Create an unsubmitted review with GraphQL `addPullRequestReview`, passing `pullRequestId` and `commitOID` and omitting `event`. Keep the returned review node ID.
+Before creating anything, query the active actor's `PENDING` review. Reuse it when its commit OID matches the frozen HEAD. If it targets another HEAD, stop and require the stale review to be submitted or discarded. Only when no pending review exists, create one with GraphQL `addPullRequestReview`, passing `pullRequestId` and `commitOID` and omitting `event`. Keep the returned review node ID.
+
+## Authentication preflight
+
+Use the non-JSON form of `gh auth status --active --hostname HOST` when relying on its exit code. `gh auth status --json` intentionally exits zero even when an account has authentication problems, so JSON mode is safe only when the returned account state is explicitly inspected.
 
 ## Inline review threads
 
