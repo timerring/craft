@@ -56,7 +56,7 @@ Step-by-step templates:
 
 ### Skills
 Reusable Codex skills:
-- `github-pr-review`: reviews every changed file in a GitHub PR, tracks files as Viewed, collects inline feedback in a pending review, and guards approval and merge operations with frozen-HEAD and repository checks.
+- `github-pr-review`: reviews every changed file in a GitHub PR, tracks files as Viewed, collects inline feedback in a pending review, promotes eligible Draft PRs to Ready, and guards approval and merge operations with frozen-HEAD and repository checks.
 
 ### Shortcuts
 PPLX shortcuts for Perplexity AI prompts.

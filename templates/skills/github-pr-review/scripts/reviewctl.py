@@ -262,6 +262,21 @@ mutation($reviewId: ID!, $event: PullRequestReviewEvent!, $body: String!) {
     return result["data"]["submitPullRequestReview"]["pullRequestReview"]
 
 
+def mark_ready(repo: str, pr: int, expected_head: str) -> dict[str, Any]:
+    identity = require_head(repo, pr, expected_head)
+    if not identity.get("isDraft"):
+        return identity
+    query = """
+mutation($pullRequestId: ID!) {
+  markPullRequestReadyForReview(input: {pullRequestId: $pullRequestId}) {
+    pullRequest { id headRefOid isDraft }
+  }
+}
+"""
+    result = graphql(query, {"pullRequestId": identity["id"]})
+    return result["data"]["markPullRequestReadyForReview"]["pullRequest"]
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="command", required=True)
@@ -300,6 +315,9 @@ def parser() -> argparse.ArgumentParser:
         "--event", required=True, choices=("COMMENT", "REQUEST_CHANGES", "APPROVE")
     )
     submit.add_argument("--body", required=True)
+
+    ready = sub.add_parser("mark-ready", help="Mark a reviewed Draft PR Ready")
+    common(ready)
     return root
 
 
@@ -336,6 +354,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.event,
                 args.body,
             )
+        elif args.command == "mark-ready":
+            result = mark_ready(args.repo, args.pr, args.expected_head)
         else:  # pragma: no cover - argparse guarantees this branch is unreachable.
             raise ReviewCtlError(f"unknown command: {args.command}")
     except ReviewCtlError as exc:

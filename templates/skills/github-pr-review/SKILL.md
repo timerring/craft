@@ -1,6 +1,6 @@
 ---
 name: github-pr-review
-description: Standardize end-to-end GitHub pull request reviews. Use when asked to review, inspect, approve, LGTM, request changes on, or merge a GitHub PR or the current branch's PR. Inspect every changed file, track each file as Viewed only after review, collect inline findings in one pending review, submit COMMENT/REQUEST_CHANGES/APPROVE, and enforce head-SHA and merge gates before any authorized merge.
+description: Standardize end-to-end GitHub pull request reviews. Use when asked to review, inspect, approve, LGTM, request changes on, or merge a GitHub PR or the current branch's PR. Inspect every changed file, track Viewed state, submit one review, promote reviewed Draft PRs to Ready when no blocking finding remains, and enforce head-SHA and merge gates.
 ---
 
 # GitHub PR Review
@@ -18,6 +18,7 @@ Run a GitHub-native review with an auditable per-file trail. Treat analysis, rev
 - Never approve a PR authored by the active GitHub identity as a substitute for independent approval.
 - Never merge without explicit user authorization in the current request. “Review”, “LGTM”, or “approve” alone does not authorize merge.
 - Recheck the head SHA immediately before Submit and again before merge. Stop if it changed.
+- After a successfully submitted review with no blocking finding, automatically mark a Draft PR Ready when repository-specific Ready gates are known and satisfied. Keep it Draft after `REQUEST_CHANGES` or when any gate is unknown.
 - Never bypass required checks, unresolved conversations, branch protection, or repository rules.
 
 ## Tool routing
@@ -96,7 +97,27 @@ python3 <skill-dir>/scripts/reviewctl.py submit \
 
 Do not post a separate “LGTM” issue comment when the approval review body already carries the conclusion.
 
-### 5. Merge only under explicit authorization
+### 5. Promote a reviewed Draft PR to Ready
+
+Treat skill invocation as authorization for this guarded Draft-to-Ready transition; it never authorizes merge. After Submit, automatically mark the PR Ready when all of these are true:
+
+- the submitted event is `COMMENT` or `APPROVE`, and the current review has no blocking finding;
+- no unresolved blocking finding from another reviewer remains;
+- repository-specific pre-Ready gates are known and satisfied, including required validation, PR metadata, and temporary design-artifact disposition when applicable;
+- the PR is still open and its head SHA still matches the reviewed SHA.
+
+Non-blocking comments do not prevent Ready. A self-authored PR submitted as `COMMENT` may become Ready when the gates above pass. Keep the PR Draft after `REQUEST_CHANGES`, a failed required check, an unknown gate, or a head change.
+
+Prefer the GitHub connector's Ready mutation when available. Otherwise run:
+
+```bash
+python3 <skill-dir>/scripts/reviewctl.py mark-ready \
+  --repo OWNER/REPO --pr NUMBER --expected-head HEAD_SHA
+```
+
+Verify GitHub reports `isDraft: false`. If the transition fails, report the failure and leave merge untouched.
+
+### 6. Merge only under explicit authorization
 
 Immediately before merge, verify all of the following against the same head SHA:
 
@@ -118,6 +139,7 @@ Report:
 - reviewed file count versus total;
 - inline comment count and finding summary;
 - submitted event (`COMMENT`, `REQUEST_CHANGES`, or `APPROVE`);
+- Draft-to-Ready result (`already ready`, `marked ready`, or the exact reason it remained Draft);
 - checks and unresolved-thread status;
 - whether merge was authorized and performed;
 - any action that could not be written to GitHub.
