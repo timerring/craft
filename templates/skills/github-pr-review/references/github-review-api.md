@@ -28,6 +28,10 @@ After reviewing one file, call `markFileAsViewed` with the pull request node ID 
 
 Submit the pending review with `submitPullRequestReview`, the pending review node ID, a summary body, and exactly one event: `COMMENT`, `REQUEST_CHANGES`, or `APPROVE`.
 
+## Ready state
+
+After a no-blocker review satisfies repository Ready gates, recheck the frozen HEAD and call `markPullRequestReadyForReview` with the pull request node ID. The mutation is only needed when `isDraft` is true; otherwise treat the operation as an idempotent success. Re-read `isDraft` after the mutation before reporting Ready.
+
 ## Merge safety
 
 Approval is not merge authorization. Before an explicitly authorized merge, re-read head SHA, required checks, review decision, unresolved threads, Draft state, mergeability, and branch protection. Prefer a merge API that accepts the expected head SHA. Treat missing or paginated-away evidence as an unknown gate and stop.

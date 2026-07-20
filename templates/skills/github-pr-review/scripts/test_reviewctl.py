@@ -159,6 +159,54 @@ class ReviewCtlTests(unittest.TestCase):
         self.assertEqual(result["headRefOid"], "abc")
         self.assertEqual(graphql.call_args.args[1]["path"], "src/app.py")
 
+    def test_mark_ready_mutates_matching_draft_pr(self) -> None:
+        with (
+            patch.object(
+                reviewctl,
+                "require_head",
+                return_value={
+                    "id": "PR_1",
+                    "headRefOid": "abc",
+                    "isDraft": True,
+                    "state": "OPEN",
+                },
+            ),
+            patch.object(
+                reviewctl,
+                "graphql",
+                return_value={
+                    "data": {
+                        "markPullRequestReadyForReview": {
+                            "pullRequest": {
+                                "id": "PR_1",
+                                "headRefOid": "abc",
+                                "isDraft": False,
+                            }
+                        }
+                    }
+                },
+            ) as graphql,
+        ):
+            result = reviewctl.mark_ready("owner/repo", 7, "abc")
+        self.assertFalse(result["isDraft"])
+        self.assertIn("markPullRequestReadyForReview", graphql.call_args.args[0])
+        self.assertEqual(graphql.call_args.args[1]["pullRequestId"], "PR_1")
+
+    def test_mark_ready_is_idempotent_when_pr_is_already_ready(self) -> None:
+        identity = {
+            "id": "PR_1",
+            "headRefOid": "abc",
+            "isDraft": False,
+            "state": "OPEN",
+        }
+        with (
+            patch.object(reviewctl, "require_head", return_value=identity),
+            patch.object(reviewctl, "graphql") as graphql,
+        ):
+            result = reviewctl.mark_ready("owner/repo", 7, "abc")
+        self.assertEqual(result, identity)
+        graphql.assert_not_called()
+
     def test_line_comment_requires_line_and_side(self) -> None:
         with patch.object(reviewctl, "require_head"):
             with self.assertRaisesRegex(reviewctl.ReviewCtlError, "require --line"):
