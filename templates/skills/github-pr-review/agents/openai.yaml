@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub PR Review"
   short_description: "逐文件完成 GitHub PR 评审并安全提交结论"
-  default_prompt: "使用 $github-pr-review 评审当前 PR：检查全部改动，逐文件标记 Viewed，有问题写行内评论，提交 Review；无阻塞问题且 Ready 门禁满足时自动把 Draft 转为 Ready，仅按明确授权合并。"
+  default_prompt: "使用 $github-pr-review 评审当前 PR：检查全部改动，逐文件标记 Viewed，有问题写行内评论，提交 Review；无阻塞问题且 Ready 门禁满足时自动把 Draft 转为 Ready；如果是当前身份自己的 PR，LGTM 后自动 squash merge，其他 PR 仅按明确授权合并。"

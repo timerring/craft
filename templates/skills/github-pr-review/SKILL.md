@@ -1,6 +1,6 @@
 ---
 name: github-pr-review
-description: Standardize end-to-end GitHub pull request reviews. Use when asked to review, inspect, approve, LGTM, request changes on, or merge a GitHub PR or the current branch's PR. Inspect every changed file, track Viewed state, submit one review, promote reviewed Draft PRs to Ready when no blocking finding remains, and enforce head-SHA and merge gates.
+description: Standardize end-to-end GitHub pull request reviews. Use when asked to review, inspect, approve, LGTM, request changes on, or merge a GitHub PR or the current branch's PR. Inspect every changed file, track Viewed state, submit one review, promote reviewed Draft PRs to Ready when no blocking finding remains, automatically squash-merge the active identity's own PR after an LGTM review, and enforce head-SHA and merge gates.
 ---
 
 # GitHub PR Review
@@ -16,7 +16,7 @@ Run a GitHub-native review with an auditable per-file trail. Treat analysis, rev
 - Keep inline comments in a pending review until the whole PR has been assessed.
 - Submit `REQUEST_CHANGES` for any blocking finding, `COMMENT` for non-blocking feedback only, and `APPROVE` only when no blocking finding remains.
 - Never approve a PR authored by the active GitHub identity as a substitute for independent approval.
-- Never merge without explicit user authorization in the current request. “Review”, “LGTM”, or “approve” alone does not authorize merge.
+- For a PR authored by the active GitHub identity, treat a completed LGTM review as authorization to squash-merge after every merge gate passes; do not ask for separate confirmation. For any other PR, never merge without explicit user authorization in the current request.
 - Recheck the head SHA immediately before Submit and again before merge. Stop if it changed.
 - After a successfully submitted review with no blocking finding, automatically mark a Draft PR Ready when repository-specific Ready gates are known and satisfied. Keep it Draft after `REQUEST_CHANGES` or when any gate is unknown.
 - Never bypass required checks, unresolved conversations, branch protection, or repository rules.
@@ -37,7 +37,7 @@ Read `references/github-review-api.md` before changing the helper or manually re
 - Identify the PR from the supplied URL/number or current branch.
 - Record repository, PR number, base SHA, head SHA, author, current actor, Draft state, changed-file count, checks, existing reviews, and unresolved threads.
 - Read applicable `AGENTS.md` and repository review rules.
-- State whether the request authorizes only review, also approval, or also merge. Do not broaden authorization.
+- State whether merge authorization comes from a self-authored LGTM under this skill or from an explicit current request. Do not broaden authorization for any other PR.
 - Confirm the active identity is allowed to review the PR. An author may comment on their own PR but cannot provide meaningful independent approval.
 
 ### 2. Create one pending review
@@ -97,9 +97,11 @@ python3 <skill-dir>/scripts/reviewctl.py submit \
 
 Do not post a separate “LGTM” issue comment when the approval review body already carries the conclusion.
 
+For a PR authored by the active GitHub identity, submit `COMMENT` rather than self-approve. Treat the result as LGTM only when all files have been reviewed, no blocking finding remains, and validation evidence is adequate. Continue through Ready and squash merge without requesting separate authorization.
+
 ### 5. Promote a reviewed Draft PR to Ready
 
-Treat skill invocation as authorization for this guarded Draft-to-Ready transition; it never authorizes merge. After Submit, automatically mark the PR Ready when all of these are true:
+Treat skill invocation as authorization for this guarded Draft-to-Ready transition. For a self-authored PR, the completed LGTM review separately authorizes squash merge under step 6; otherwise Ready does not authorize merge. After Submit, automatically mark the PR Ready when all of these are true:
 
 - the submitted event is `COMMENT` or `APPROVE`, and the current review has no blocking finding;
 - no unresolved blocking finding from another reviewer remains;
@@ -117,7 +119,7 @@ python3 <skill-dir>/scripts/reviewctl.py mark-ready \
 
 Verify GitHub reports `isDraft: false`. If the transition fails, report the failure and leave merge untouched.
 
-### 6. Merge only under explicit authorization
+### 6. Merge under the applicable authorization
 
 Immediately before merge, verify all of the following against the same head SHA:
 
@@ -129,7 +131,7 @@ Immediately before merge, verify all of the following against the same head SHA:
 - GitHub reports the PR mergeable and branch protection permits merge.
 - No blocking finding from any reviewer remains outstanding.
 
-Use the repository's merge policy, normally squash, and pass an expected-head guard when the available tool supports it. If any gate is unknown, fail closed and report it instead of merging.
+When the active GitHub identity authored the PR and the completed review is LGTM, squash-merge automatically after all gates pass. For PRs authored by anyone else, merge only when the current request explicitly authorizes it. Pass an expected-head guard when the available tool supports it. If any gate is unknown, fail closed and report it instead of merging.
 
 ## Output contract
 
@@ -141,7 +143,7 @@ Report:
 - submitted event (`COMMENT`, `REQUEST_CHANGES`, or `APPROVE`);
 - Draft-to-Ready result (`already ready`, `marked ready`, or the exact reason it remained Draft);
 - checks and unresolved-thread status;
-- whether merge was authorized and performed;
+- whether merge was authorized by self-authored LGTM or explicit request, and whether the squash merge was performed;
 - any action that could not be written to GitHub.
 
 Do not say “LGTM”, “approved”, or “merged” unless GitHub confirms that exact state.
