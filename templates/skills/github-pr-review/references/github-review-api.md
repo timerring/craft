@@ -34,7 +34,7 @@ After a no-blocker review satisfies repository Ready gates, recheck the frozen H
 
 ## Merge safety
 
-Approval is not merge authorization. Before an explicitly authorized merge, re-read head SHA, required checks, review decision, unresolved threads, Draft state, mergeability, and branch protection. Prefer a merge API that accepts the expected head SHA. Treat missing or paginated-away evidence as an unknown gate and stop.
+For a PR authored by the active GitHub identity, a completed LGTM review authorizes squash merge under the skill. Any other PR requires explicit merge authorization in the current request. Before either merge path, re-read head SHA, required checks, review decision, unresolved threads, Draft state, mergeability, and branch protection. Prefer a merge API that accepts the expected head SHA. Treat missing or paginated-away evidence as an unknown gate and stop.
 
 ## Primary references
 
