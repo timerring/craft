@@ -298,6 +298,167 @@ class ReviewCtlTests(unittest.TestCase):
             ):
                 reviewctl.resolve_thread("owner/repo", 7, "abc", "THREAD_1")
 
+    def test_resolve_thread_rejects_stale_lookup_head(self) -> None:
+        with (
+            patch.object(
+                reviewctl,
+                "require_head",
+                return_value={"id": "PR_1", "headRefOid": "abc", "state": "OPEN"},
+            ),
+            patch.object(
+                reviewctl,
+                "graphql",
+                return_value={
+                    "data": {
+                        "node": {
+                            "id": "THREAD_1",
+                            "isResolved": False,
+                            "pullRequest": {"id": "PR_1", "headRefOid": "def"},
+                        }
+                    }
+                },
+            ) as graphql,
+        ):
+            with self.assertRaisesRegex(reviewctl.ReviewCtlError, "HEAD changed"):
+                reviewctl.resolve_thread("owner/repo", 7, "abc", "THREAD_1")
+        self.assertEqual(graphql.call_count, 1)
+
+    def test_resolve_thread_rejects_stale_mutation_head(self) -> None:
+        with (
+            patch.object(
+                reviewctl,
+                "require_head",
+                return_value={"id": "PR_1", "headRefOid": "abc", "state": "OPEN"},
+            ),
+            patch.object(
+                reviewctl,
+                "graphql",
+                side_effect=[
+                    {
+                        "data": {
+                            "node": {
+                                "id": "THREAD_1",
+                                "isResolved": False,
+                                "pullRequest": {"id": "PR_1", "headRefOid": "abc"},
+                            }
+                        }
+                    },
+                    {
+                        "data": {
+                            "resolveReviewThread": {
+                                "thread": {
+                                    "id": "THREAD_1",
+                                    "isResolved": True,
+                                    "pullRequest": {
+                                        "id": "PR_1",
+                                        "headRefOid": "def",
+                                    },
+                                }
+                            }
+                        }
+                    },
+                ],
+            ),
+        ):
+            with self.assertRaisesRegex(reviewctl.ReviewCtlError, "HEAD changed"):
+                reviewctl.resolve_thread("owner/repo", 7, "abc", "THREAD_1")
+
+    def test_resolve_thread_requires_confirmed_resolution(self) -> None:
+        with (
+            patch.object(
+                reviewctl,
+                "require_head",
+                return_value={"id": "PR_1", "headRefOid": "abc", "state": "OPEN"},
+            ),
+            patch.object(
+                reviewctl,
+                "graphql",
+                side_effect=[
+                    {
+                        "data": {
+                            "node": {
+                                "id": "THREAD_1",
+                                "isResolved": False,
+                                "pullRequest": {"id": "PR_1", "headRefOid": "abc"},
+                            }
+                        }
+                    },
+                    {
+                        "data": {
+                            "resolveReviewThread": {
+                                "thread": {
+                                    "id": "THREAD_1",
+                                    "isResolved": False,
+                                    "pullRequest": {
+                                        "id": "PR_1",
+                                        "headRefOid": "abc",
+                                    },
+                                }
+                            }
+                        }
+                    },
+                ],
+            ),
+        ):
+            with self.assertRaisesRegex(reviewctl.ReviewCtlError, "did not confirm"):
+                reviewctl.resolve_thread("owner/repo", 7, "abc", "THREAD_1")
+
+    def test_resolve_thread_rejects_changed_mutation_identity(self) -> None:
+        invalid_threads = (
+            {
+                "id": "THREAD_2",
+                "isResolved": True,
+                "pullRequest": {"id": "PR_1", "headRefOid": "abc"},
+            },
+            {
+                "id": "THREAD_1",
+                "isResolved": True,
+                "pullRequest": {"id": "PR_2", "headRefOid": "abc"},
+            },
+        )
+        for invalid_thread in invalid_threads:
+            with self.subTest(invalid_thread=invalid_thread):
+                with (
+                    patch.object(
+                        reviewctl,
+                        "require_head",
+                        return_value={
+                            "id": "PR_1",
+                            "headRefOid": "abc",
+                            "state": "OPEN",
+                        },
+                    ),
+                    patch.object(
+                        reviewctl,
+                        "graphql",
+                        side_effect=[
+                            {
+                                "data": {
+                                    "node": {
+                                        "id": "THREAD_1",
+                                        "isResolved": False,
+                                        "pullRequest": {
+                                            "id": "PR_1",
+                                            "headRefOid": "abc",
+                                        },
+                                    }
+                                }
+                            },
+                            {
+                                "data": {
+                                    "resolveReviewThread": {
+                                        "thread": invalid_thread
+                                    }
+                                }
+                            },
+                        ],
+                    ),
+                ):
+                    with self.assertRaises(reviewctl.ReviewCtlError):
+                        reviewctl.resolve_thread(
+                            "owner/repo", 7, "abc", "THREAD_1"
+                        )
+
     def test_parser_accepts_resolve_thread(self) -> None:
         args = reviewctl.parser().parse_args(
             [
