@@ -1,17 +1,25 @@
 ---
 name: github-pr-writer
-description: Prepare and create or update accurate, reviewer-friendly GitHub pull requests from repository evidence, with every title required to follow Conventional Commits. Explicitly invoking $github-pr-writer authorizes creating or updating the PR and the scoped commit and push required to publish it, unless the user asks for text only. Use when asked to write, draft, prepare, improve, create, update, or summarize a PR; explain current branch changes for review; fill a pull request template; or assess whether a change should be a Draft PR. Inspect the actual diff, repository guidance, commitlint rules, tests, risks, and related issues before publishing.
+description: Prepare and create or update accurate, reviewer-friendly GitHub pull requests from repository evidence, with every title required to follow Conventional Commits. Explicitly invoking $github-pr-writer authorizes creating or updating the PR and the scoped commit and push required to publish it, unless the user asks for text only. Use the authenticated GitHub CLI (`gh`) exclusively for GitHub identity, PR, and API operations. Use when asked to write, draft, prepare, improve, create, update, or summarize a PR; explain current branch changes for review; fill a pull request template; or assess whether a change should be a Draft PR. Inspect the actual diff, repository guidance, commitlint rules, tests, risks, and related issues before publishing.
 ---
 
 # GitHub PR Writer
 
 Write a focused PR that lets a reviewer understand why the change exists, what it does, how it was verified, and where risk remains. Treat the repository's own contribution rules and PR template as authoritative.
 
+## Tooling
+
+- Use the authenticated GitHub CLI (`gh`) exclusively for GitHub identity, repository, pull request, review, check, and API reads or writes.
+- Run `gh auth status` before the first GitHub operation and stop with actionable guidance when authentication is unavailable.
+- Use `gh pr`, `gh repo`, and other native `gh` commands when available; use `gh api` only for GitHub operations not covered by a suitable native command.
+- Do not inspect, discover, or use a GitHub Connector, GitHub MCP server, browser automation, `curl`, or direct HTTP requests.
+- Continue to use standard `git` commands for local repository inspection, branches, staging, commits, and pushes.
+
 ## Workflow
 
 1. Default to creating or updating the GitHub PR. Treat explicit invocation of `$github-pr-writer` as authorization to make the scoped commit, push its branch, and create or update the PR. Return text only when the user explicitly asks to draft, preview, or avoid GitHub changes.
 2. Read applicable repository guidance, including `AGENTS.md`, `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE*`, commitlint configuration, and documented commit conventions.
-3. Verify the authenticated GitHub identity and establish the repository, existing PR, base branch, and head branch from the request, Git metadata, or repository defaults. State any material uncertainty.
+3. Run `gh auth status`, then use `gh` and Git metadata to establish the authenticated identity, repository, existing PR, base branch, and head branch. State any material uncertainty.
 4. Inspect the evidence:
    - Commit list and diff against the base branch
    - Changed-file summary and important implementation details
@@ -27,9 +35,9 @@ Write a focused PR that lets a reviewer understand why the change exists, what i
     - Reuse an existing non-default head branch only when it follows the branch naming gate below; otherwise rename it or create a compliant focused branch.
     - Stage only the intended files and create a Conventional Commits commit when uncommitted changes must be published.
     - Push the head branch without force.
-    - Update the existing open PR for the head branch, or create one with the prepared title and body.
+    - Use `gh` to update the existing open PR for the head branch, or create one with the prepared title and body.
     - Create a Draft PR when verification is missing, blockers remain, or scope/readiness is uncertain; otherwise create a ready PR.
-11. Re-read the resulting PR metadata and report the PR URL, ready/draft state, head/base branches, commit, and verification evidence. Do not merge the PR.
+11. Re-read the resulting PR metadata with `gh` and report the PR URL, ready/draft state, head/base branches, commit, and verification evidence. Do not merge the PR.
 
 ## Evidence rules
 

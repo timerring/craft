@@ -86,7 +86,7 @@ ln -s "$(pwd)/templates/skills/github-pr-writer" ~/.agents/skills/github-pr-writ
 
 Use `$github-issues` when asking Codex to create, update, search, or organize GitHub issues.
 Use `$github-pr-review` when asking Codex to review, approve, or merge a pull request. The skill requires an authenticated GitHub CLI (`gh auth status`) for GitHub write operations.
-Use `$github-pr-writer` to turn the intended repository changes into a scoped commit and a created or updated pull request. Ask for text only when you do not want GitHub changes.
+Use `$github-pr-writer` to turn the intended repository changes into a scoped commit and a created or updated pull request. It uses the authenticated GitHub CLI (`gh`) exclusively for GitHub operations; ask for text only when you do not want GitHub changes.
 
 ## License
 
