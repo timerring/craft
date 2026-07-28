@@ -233,6 +233,44 @@ mutation({', '.join(declarations)}) {{
     return result["data"]["addPullRequestReviewThread"]["thread"]
 
 
+def resolve_thread(
+    repo: str,
+    pr: int,
+    expected_head: str,
+    thread_id: str,
+) -> dict[str, Any]:
+    identity = require_head(repo, pr, expected_head)
+    lookup = """
+query($threadId: ID!) {
+  node(id: $threadId) {
+    ... on PullRequestReviewThread {
+      id
+      isResolved
+      pullRequest { id headRefOid }
+    }
+  }
+}
+"""
+    result = graphql(lookup, {"threadId": thread_id})
+    thread = result.get("data", {}).get("node")
+    if not isinstance(thread, dict) or thread.get("id") != thread_id:
+        raise ReviewCtlError("review thread was not found")
+    if thread.get("pullRequest", {}).get("id") != identity["id"]:
+        raise ReviewCtlError("review thread does not belong to the guarded pull request")
+    if thread.get("isResolved"):
+        return thread
+
+    mutation = """
+mutation($threadId: ID!) {
+  resolveReviewThread(input: {threadId: $threadId}) {
+    thread { id isResolved pullRequest { id headRefOid } }
+  }
+}
+"""
+    result = graphql(mutation, {"threadId": thread_id})
+    return result["data"]["resolveReviewThread"]["thread"]
+
+
 def submit_review(
     repo: str,
     pr: int,
@@ -308,6 +346,12 @@ def parser() -> argparse.ArgumentParser:
     comment.add_argument("--start-line", type=int)
     comment.add_argument("--start-side", choices=("LEFT", "RIGHT"))
 
+    resolve = sub.add_parser(
+        "resolve-thread", help="Resolve one verified review conversation"
+    )
+    common(resolve)
+    resolve.add_argument("--thread-id", required=True)
+
     submit = sub.add_parser("submit", help="Submit a pending review")
     common(submit)
     submit.add_argument("--review-id", required=True)
@@ -344,6 +388,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.side,
                 args.start_line,
                 args.start_side,
+            )
+        elif args.command == "resolve-thread":
+            result = resolve_thread(
+                args.repo,
+                args.pr,
+                args.expected_head,
+                args.thread_id,
             )
         elif args.command == "submit":
             result = submit_review(
