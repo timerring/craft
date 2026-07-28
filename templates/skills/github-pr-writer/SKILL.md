@@ -16,7 +16,7 @@ Write a focused PR that lets a reviewer understand why the change exists, what i
    - Commit list and diff against the base branch
    - Changed-file summary and important implementation details
    - Added or changed tests and documentation
-   - Configuration, dependency, schema, API, security, and compatibility effects
+   - Configuration, dependency, database, schema, API, security, and compatibility effects
    - Related issue or project references available in context
 5. Determine the intended change scope from the request and evidence. Never stage unrelated working-tree changes. If independent purposes are mixed or the intended files cannot be identified safely, stop and ask for scope instead of publishing an inaccurate PR.
 6. Self-review the scoped diff for accidental files, generated artifacts, debug code, secrets, and claims unsupported by the change.
@@ -38,6 +38,8 @@ Write a focused PR that lets a reviewer understand why the change exists, what i
 - Distinguish `Not run`, `Not applicable`, and a verified passing result.
 - Do not check a checklist item without evidence.
 - Call out migrations, rollout requirements, feature flags, backward incompatibility, security-sensitive changes, and rollback limits.
+- Always include a `Changed files` section containing a repository-root-relative directory tree of every file in the PR diff. Show only changed paths, preserve their real directory hierarchy, and do not substitute a flat file list.
+- When the diff affects persisted data, include a `Database changes` section naming every affected database, schema or namespace when applicable, and table or collection. Describe the operation and impact, including migrations, indexes, backfills, compatibility, and rollback constraints when relevant. If the exact database or table cannot be established from evidence, state that uncertainty and keep the PR in Draft.
 - Use screenshots or recordings for visible UI changes when available. Do not invent them.
 - Use `Closes #123`, `Fixes #123`, or `Resolves #123` only when the PR genuinely completes that issue and will target the default branch. Otherwise use `Related to #123`.
 - Preserve important uncertainty in the PR instead of guessing.
@@ -81,9 +83,9 @@ misc changes
 
 ## Fallback body
 
-Adapt the sections to the change. Keep `Summary`, `Why`, and `Verification`; omit empty optional sections.
+Adapt the sections to the change. Keep `Summary`, `Why`, `Changed files`, and `Verification`; omit empty optional sections.
 
-```markdown
+````markdown
 ## Summary
 
 - Describe the concrete outcome.
@@ -98,6 +100,26 @@ Related to #123
 ## Implementation
 
 Explain non-obvious design decisions and tradeoffs. Omit for trivial changes.
+
+## Changed files
+
+```text
+src/
+├── api/
+│   └── orders.ts
+└── db/
+    └── migrations/
+        └── add-order-status.sql
+```
+
+Include every changed file and no unchanged paths.
+
+## Database changes
+
+- `commerce.public.orders`: add the `status` column and supporting index.
+- Migration/backfill/rollback notes.
+
+Include this section only when persisted data is affected. Name the actual databases and tables or collections from repository evidence.
 
 ## Verification
 
@@ -119,7 +141,7 @@ Add before/after evidence for visible UI changes.
 ## Reviewer guide
 
 Call out the files, behavior, or decisions that deserve the closest review.
-```
+````
 
 Do not include empty labels such as `Compatibility:` merely to make the body look complete. Replace them with useful content or remove the section.
 
