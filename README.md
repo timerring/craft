@@ -64,7 +64,7 @@ Step-by-step templates:
 ### Skills
 Reusable Codex skills:
 - `github-issues`: creates, updates, searches, and manages GitHub issues exclusively through the authenticated GitHub CLI, including issue types, fields, Projects V2, sub-issues, and dependency relationships.
-- `github-pr-review`: reviews every changed file in a GitHub PR, tracks files as Viewed, collects inline feedback in a pending review, promotes eligible Draft PRs to Ready, automatically squash-merges the active identity's own PR after LGTM, and guards approval and merge operations with frozen-HEAD and repository checks.
+- `github-pr-review`: reviews every changed file in a GitHub PR, tracks files as Viewed, collects inline feedback in a pending review, promotes eligible Draft PRs to Ready, stops after LGTM for explicit user confirmation, and guards approval and any later merge with frozen-HEAD and repository checks.
 - `github-pr-writer`: inspects repository guidance and the actual diff, then creates or updates a GitHub PR with a Conventional Commits title, evidence-based description, scoped commit, verification, and reviewer guidance.
 
 ### Shortcuts
