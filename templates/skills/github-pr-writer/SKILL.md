@@ -24,7 +24,7 @@ Write a focused PR that lets a reviewer understand why the change exists, what i
 8. Draft a Conventional Commits title and a body using the repository template. If no body template exists, use the fallback structure below.
 9. Validate the final title against the Conventional Commits gate.
 10. Publish the scoped change:
-    - Reuse an existing non-default head branch when appropriate; otherwise create a focused branch.
+    - Reuse an existing non-default head branch only when it follows the branch naming gate below; otherwise rename it or create a compliant focused branch.
     - Stage only the intended files and create a Conventional Commits commit when uncommitted changes must be published.
     - Push the head branch without force.
     - Update the existing open PR for the head branch, or create one with the prepared title and body.
@@ -79,6 +79,32 @@ Fix duplicate payments
 feature: pagination
 chore:update code
 misc changes
+```
+
+## Branch name
+
+Require every published head branch to follow this form:
+
+```text
+<type>/<kebab-case-description>
+```
+
+Treat branch naming as a hard gate:
+
+- Use the same Conventional Commits type selection as the PR title, including repository-defined types when available.
+- Use a short, concrete, lowercase description made from ASCII letters, numbers, and hyphens.
+- Use exactly one slash to separate the type from the description. Start both segments with a letter.
+- Never use an automation, tool, agent, or username prefix such as `codex/`, `bot/`, or a personal namespace.
+- Avoid spaces and shell-sensitive special characters. Validate the final name with `git check-ref-format --branch`.
+- Rename or replace a non-conforming branch before the first push. When updating an existing PR, preserve the PR while renaming its branch when the hosting platform supports it.
+
+Examples:
+
+```text
+refactor/finalize-permission-migration
+feat/add-order-pagination
+fix/prevent-duplicate-payments
+docs/document-github-skills
 ```
 
 ## Fallback body

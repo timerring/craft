@@ -19,6 +19,16 @@ Primary official sources:
 - Linking a pull request to an issue: https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue
 - About pull requests and Draft PRs: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
 
+## Branch names
+
+GitHub permits `/` as a path separator in branch names and recommends avoiding special characters that require shell escaping. Its documented safe default includes letters, numbers, periods, hyphens, underscores, and forward slashes, and it recommends starting names with a letter.
+
+This skill applies a deliberately stricter project convention: `<type>/<kebab-case-description>` using lowercase ASCII letters, numbers, hyphens, and one separating slash.
+
+Official source:
+
+- Dealing with special characters in branch and tag names: https://docs.github.com/en/get-started/using-git/dealing-with-special-characters-in-branch-and-tag-names
+
 ## Conventional Commits
 
 This skill additionally requires PR titles to follow Conventional Commits 1.0.0 so that squash-merge commit subjects remain machine-readable:
