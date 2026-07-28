@@ -233,6 +233,75 @@ mutation({', '.join(declarations)}) {{
     return result["data"]["addPullRequestReviewThread"]["thread"]
 
 
+def validate_thread_state(
+    thread: Any,
+    *,
+    thread_id: str,
+    pull_request_id: str,
+    expected_head: str,
+    require_resolved: bool = False,
+) -> dict[str, Any]:
+    if not isinstance(thread, dict) or thread.get("id") != thread_id:
+        raise ReviewCtlError("review thread was not found or changed identity")
+    pull_request = thread.get("pullRequest")
+    if not isinstance(pull_request, dict) or pull_request.get("id") != pull_request_id:
+        raise ReviewCtlError("review thread does not belong to the guarded pull request")
+    actual_head = pull_request.get("headRefOid")
+    if actual_head != expected_head:
+        raise ReviewCtlError(
+            f"pull request HEAD changed: expected {expected_head}, found {actual_head}; "
+            "restart review"
+        )
+    if require_resolved and thread.get("isResolved") is not True:
+        raise ReviewCtlError("GitHub did not confirm that the review thread was resolved")
+    return thread
+
+
+def resolve_thread(
+    repo: str,
+    pr: int,
+    expected_head: str,
+    thread_id: str,
+) -> dict[str, Any]:
+    identity = require_head(repo, pr, expected_head)
+    lookup = """
+query($threadId: ID!) {
+  node(id: $threadId) {
+    ... on PullRequestReviewThread {
+      id
+      isResolved
+      pullRequest { id headRefOid }
+    }
+  }
+}
+"""
+    result = graphql(lookup, {"threadId": thread_id})
+    thread = validate_thread_state(
+        result.get("data", {}).get("node"),
+        thread_id=thread_id,
+        pull_request_id=identity["id"],
+        expected_head=expected_head,
+    )
+    if thread.get("isResolved"):
+        return thread
+
+    mutation = """
+mutation($threadId: ID!) {
+  resolveReviewThread(input: {threadId: $threadId}) {
+    thread { id isResolved pullRequest { id headRefOid } }
+  }
+}
+"""
+    result = graphql(mutation, {"threadId": thread_id})
+    return validate_thread_state(
+        result.get("data", {}).get("resolveReviewThread", {}).get("thread"),
+        thread_id=thread_id,
+        pull_request_id=identity["id"],
+        expected_head=expected_head,
+        require_resolved=True,
+    )
+
+
 def submit_review(
     repo: str,
     pr: int,
@@ -308,6 +377,12 @@ def parser() -> argparse.ArgumentParser:
     comment.add_argument("--start-line", type=int)
     comment.add_argument("--start-side", choices=("LEFT", "RIGHT"))
 
+    resolve = sub.add_parser(
+        "resolve-thread", help="Resolve one verified review conversation"
+    )
+    common(resolve)
+    resolve.add_argument("--thread-id", required=True)
+
     submit = sub.add_parser("submit", help="Submit a pending review")
     common(submit)
     submit.add_argument("--review-id", required=True)
@@ -344,6 +419,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.side,
                 args.start_line,
                 args.start_side,
+            )
+        elif args.command == "resolve-thread":
+            result = resolve_thread(
+                args.repo,
+                args.pr,
+                args.expected_head,
+                args.thread_id,
             )
         elif args.command == "submit":
             result = submit_review(
