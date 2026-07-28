@@ -96,7 +96,7 @@ Treat branch naming as a hard gate:
 - Use exactly one slash to separate the type from the description. Start both segments with a letter.
 - Never use an automation, tool, agent, or username prefix such as `codex/`, `bot/`, or a personal namespace.
 - Avoid spaces and shell-sensitive special characters. Validate the final name with `git check-ref-format --branch`.
-- Rename or replace a non-conforming branch before the first push. When updating an existing PR, preserve the PR while renaming its branch when the hosting platform supports it.
+- Rename or replace a non-conforming branch before the first push. When updating an existing PR, preserve it during the rename when the hosting platform supports that workflow; otherwise create a replacement PR from the compliant branch and report the superseded PR.
 
 Examples:
 
