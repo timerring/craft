@@ -40,7 +40,7 @@ After a no-blocker review satisfies repository Ready gates and verified fixed co
 
 ## Merge safety
 
-For a PR authored by the active GitHub identity, a completed LGTM review authorizes squash merge under the skill. Any other PR requires explicit merge authorization in the current request. Before either merge path, re-read head SHA, required checks, review decision, unresolved threads, Draft state, mergeability, and branch protection. Prefer `gh pr merge --match-head-commit` or another merge API that accepts the expected head SHA. Treat missing or paginated-away evidence as an unknown gate and stop.
+LGTM never authorizes merge by itself, including for a PR authored by the active GitHub identity. End the review task after GitHub confirms LGTM. Merge only after the user sends a new explicit merge instruction after that LGTM; ignore any merge request made before LGTM as preauthorization. In the later merge task, re-read head SHA, required checks, review decision, unresolved threads, Draft state, mergeability, and branch protection. Prefer `gh pr merge --match-head-commit` or another merge API that accepts the expected head SHA. Treat missing or paginated-away evidence as an unknown gate and stop.
 
 ## Primary references
 

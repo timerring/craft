@@ -1,6 +1,6 @@
 ---
 name: github-pr-review
-description: Standardize end-to-end GitHub pull request reviews. Use when asked to review, inspect, approve, LGTM, request changes on, or merge a GitHub PR or the current branch's PR. Inspect every changed file, track Viewed state, resolve conversations only after verifying their fixes, promote eligible Draft PRs to Ready before submitting LGTM, automatically squash-merge the active identity's own PR after LGTM, and enforce head-SHA and merge gates.
+description: Standardize end-to-end GitHub pull request reviews. Use when asked to review, inspect, approve, LGTM, request changes on, or merge a GitHub PR or the current branch's PR. Inspect every changed file, track Viewed state, resolve conversations only after verifying their fixes, promote eligible Draft PRs to Ready before submitting LGTM, stop for explicit user confirmation after LGTM before any merge, and enforce head-SHA and merge gates.
 ---
 
 # GitHub PR Review
@@ -17,7 +17,8 @@ Run a GitHub-native review with an auditable per-file trail. Treat analysis, rev
 - Resolve a review conversation only after verifying at the frozen head SHA that its underlying finding is fully addressed. Never resolve an unfixed, partially fixed, uncertain, or merely acknowledged conversation.
 - Submit `REQUEST_CHANGES` for any blocking finding, `COMMENT` for non-blocking feedback only, and `APPROVE` only when no blocking finding remains.
 - Never approve a PR authored by the active GitHub identity as a substitute for independent approval.
-- For a PR authored by the active GitHub identity, treat a completed LGTM review as authorization to squash-merge after every merge gate passes; do not ask for separate confirmation. For any other PR, never merge without explicit user authorization in the current request.
+- Never treat skill invocation, PR authorship, LGTM, or a merge request made before LGTM as merge authorization.
+- After GitHub confirms LGTM, stop and wait for a new explicit user instruction to merge. This post-LGTM confirmation is required for every PR, including one authored by the active GitHub identity.
 - Recheck the head SHA immediately before Submit and again before merge. Stop if it changed.
 - When a completed review has no blocking finding, automatically mark an eligible Draft PR Ready before submitting LGTM. Keep it Draft after a blocking finding or when any Ready gate is unknown.
 - Never bypass required checks, unresolved conversations, branch protection, or repository rules.
@@ -39,7 +40,7 @@ Read `references/github-review-api.md` before changing the helper or manually re
 - Identify the PR from the supplied URL/number or current branch.
 - Record repository, PR number, base SHA, head SHA, author, current actor, Draft state, changed-file count, checks, existing reviews, and unresolved threads.
 - Read applicable `AGENTS.md` and repository review rules.
-- State whether merge authorization comes from a self-authored LGTM under this skill or from an explicit current request. Do not broaden authorization for any other PR.
+- Record whether the current task is a review or a post-LGTM merge request. During review, merge authorization is unavailable by definition; do not infer or request it before LGTM.
 - Confirm the active identity is allowed to review the PR. An author may comment on their own PR but cannot provide meaningful independent approval.
 
 ### 2. Create one pending review
@@ -141,9 +142,11 @@ Submit `REQUEST_CHANGES` without promoting Ready when blockers remain. For a no-
 
 For a PR authored by the active GitHub identity, submit `COMMENT` rather than self-approve. Treat the result as LGTM only when all files have been reviewed, no actionable finding or unresolved conversation remains, validation evidence is adequate, and the PR is Ready.
 
-### 7. Merge under the applicable authorization
+### 7. Stop after LGTM; merge only on a later explicit instruction
 
-Immediately before merge, verify all of the following against the same head SHA:
+After GitHub confirms LGTM, report the result and end the review task without merging. Do not ask for merge confirmation until LGTM has been submitted, and do not carry forward a merge request made before LGTM.
+
+Only a new user instruction sent after the confirmed LGTM, explicitly requesting the merge of that PR, authorizes merging. In that later task, freeze the current head SHA and verify all of the following:
 
 - PR is open and not Draft.
 - Head SHA is unchanged from the reviewed SHA.
@@ -153,7 +156,7 @@ Immediately before merge, verify all of the following against the same head SHA:
 - GitHub reports the PR mergeable and branch protection permits merge.
 - No blocking finding from any reviewer remains outstanding.
 
-When the active GitHub identity authored the PR and the completed review is LGTM, squash-merge automatically after all gates pass. For PRs authored by anyone else, merge only when the current request explicitly authorizes it. Pass an expected-head guard when the available tool supports it. If any gate is unknown, fail closed and report it instead of merging.
+If post-LGTM authorization is present and every gate passes, squash-merge with an expected-head guard. If authorization is absent, stop without merging. If any gate is unknown, fail closed and report it instead of merging.
 
 ## Output contract
 
@@ -166,7 +169,7 @@ Report:
 - Draft-to-Ready result (`already ready`, `marked ready before LGTM`, or the exact reason it remained Draft);
 - submitted review event (`COMMENT`, `REQUEST_CHANGES`, or `APPROVE`) and whether it was LGTM;
 - checks and unresolved-thread status;
-- whether merge was authorized by self-authored LGTM or explicit request, and whether the squash merge was performed;
+- whether a new post-LGTM merge instruction was present and whether the squash merge was performed; for a review-only task, explicitly report that it stopped after LGTM awaiting user confirmation;
 - any action that could not be written to GitHub.
 
 Do not say “LGTM”, “approved”, or “merged” unless GitHub confirms that exact state.
