@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write GitHub Release"
+  short_description: "Draft and review user-facing GitHub releases"
+  default_prompt: "Use $github-release-writer to draft a clear GitHub release from the changes since the previous tag."
