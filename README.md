@@ -66,10 +66,12 @@ Step-by-step templates:
 
 ### Skills
 Reusable Codex skills:
-- `github-issues`: creates, updates, searches, and manages GitHub issues exclusively through the authenticated GitHub CLI, including issue types, fields, Projects V2, sub-issues, and dependency relationships.
+- `github-issues`: creates, updates, searches, and manages GitHub issues exclusively through the authenticated GitHub CLI, including issue types, fields, Projects V2, sub-issues, and dependency relationships.[^github-issues-source]
 - `github-pr-review`: reviews every changed file in a GitHub PR, tracks files as Viewed, collects inline feedback in a pending review, promotes eligible Draft PRs to Ready, stops after LGTM for explicit user confirmation, and guards approval and any later merge with frozen-HEAD and repository checks.
 - `github-pr-writer`: inspects repository guidance and the actual diff, then creates or updates a GitHub PR with a Conventional Commits title, evidence-based description, scoped commit, verification, and reviewer guidance.
 - `github-release-writer`: drafts and reviews user-facing GitHub Release notes from repository evidence, highlights breaking changes and upgrade risks, and keeps drafting separate from explicit publication.
+
+[^github-issues-source]: Adapted from GitHub's [`github-issues` skill](https://github.com/github/awesome-copilot/tree/main/skills/github-issues) in `github/awesome-copilot`, with its MCP-based operations replaced by authenticated `gh` CLI-only routing.
 
 ### Shortcuts
 PPLX shortcuts for Perplexity AI prompts.
