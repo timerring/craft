@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub PR Writer"
-  short_description: "分析改动并创建清晰可验证的 GitHub PR"
-  default_prompt: "使用 $github-pr-writer 分析当前分支改动，提交并推送目标文件，然后仅通过已认证的 gh CLI 创建或更新高质量的 GitHub PR。"
+  short_description: "分析改动、匹配现有 Labels 并创建高质量 GitHub PR"
+  default_prompt: "使用 $github-pr-writer 分析当前分支改动，从仓库现有 Labels 中选择匹配项，提交并推送目标文件，然后仅通过已认证的 gh CLI 创建或更新高质量的 GitHub PR。"
